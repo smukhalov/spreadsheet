@@ -87,7 +87,7 @@ namespace atn {
 
     ATNConfig(ATNConfig const&) = default;
     virtual ~ATNConfig();
-    ATNConfig& operator=(ATNConfig const&) = default;
+    //ATNConfig& operator=(ATNConfig const&) = default;
 
     virtual size_t hashCode() const;
 

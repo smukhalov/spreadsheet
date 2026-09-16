@@ -63,3 +63,16 @@ public:
 // Парсит переданное выражение и возвращает объект формулы.
 // Бросает FormulaException в случае если формула синтаксически некорректна.
 std::unique_ptr<IFormula> ParseFormula(std::string expression);
+
+class Formula : public IFormula {
+public:
+    //TODO!!
+    ~Formula() override;
+    Value Evaluate(const ISheet& sheet) const override;
+    std::string GetExpression() const override;
+    std::vector<Position> GetReferencedCells() const override;
+    HandlingResult HandleInsertedRows(int before, int count = 1) override;
+    HandlingResult HandleInsertedCols(int before, int count = 1) override;
+    HandlingResult HandleDeletedRows(int first, int count = 1) override;
+    HandlingResult HandleDeletedCols(int first, int count = 1) override;
+};
