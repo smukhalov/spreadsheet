@@ -150,24 +150,42 @@ std::vector<Position> Cell::GetReferencedCells() const {
 }
 
 //ISheet
-Sheet::~Sheet() {
-//TODO!!
-}
+Sheet::Sheet(): row_min_(0), row_max_(0), col_min_(0), col_max_(0)
+{}
+Sheet::~Sheet() = default;
 
 void Sheet::ClearCell(Position pos)  {
-    throw std::runtime_error("Sheet::ClearCell");
+    if(!pos.IsValid()){
+        throw InvalidPositionException("Sheet::ClearCell. Invalid position " + pos.ToString());
+    }
+    if(auto it = sheets_.find(pos); it != sheets_.end()){
+        sheets_.erase(it);
+    }
 }
 
 void Sheet::SetCell(Position pos, std::string text)  {
-    throw std::runtime_error("Sheet::SetCell(");
+    if(!pos.IsValid()){
+        throw InvalidPositionException("Sheet::SetCell. Invalid position " + pos.ToString());
+    }
+    //TODO!!
 }
 
 const ICell* Sheet::GetCell(Position pos) const  {
-    throw std::runtime_error("const Sheet::GetCell");
+    if(!pos.IsValid()){
+        throw InvalidPositionException("Sheet::GetCell. Invalid pos " + pos.ToString());
+    }
+    if(auto it = sheets_.find(pos); it != sheets_.end()){
+        return it->second.get();
+    }
 }
 
 ICell* Sheet::GetCell(Position pos)  {
-    throw std::runtime_error("Sheet::GetCell");
+    if(!pos.IsValid()){
+        throw InvalidPositionException("Sheet::GetCell. Invalid pos " + pos.ToString());
+    }
+    if(auto it = sheets_.find(pos); it != sheets_.end()){
+        return it->second.get();
+    }
 }
 
 void Sheet::InsertRows(int before, int count)  {
@@ -186,7 +204,7 @@ void Sheet::DeleteCols(int first, int count)  {
 }
 
 Size Sheet::GetPrintableSize() const  {
-    throw std::runtime_error("Sheet::GetPrintableSize()");
+    return {row_max_ - row_min_, col_max_ - col_min_};
 }
 
 void Sheet::PrintValues(std::ostream& output) const  {
@@ -199,5 +217,5 @@ void Sheet::PrintTexts(std::ostream& output) const  {
 
 //CreateSheet
 std::unique_ptr<ISheet> CreateSheet() {
-    throw std::runtime_error("CreateSheet()");
+    return std::make_unique<Sheet>();
 }

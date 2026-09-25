@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <limits>
 #include <iostream>
+#include <unordered_map>
 
 // Позиция ячейки. Индексация с нуля.
 struct Position {
@@ -19,13 +20,19 @@ struct Position {
   bool operator==(const Position& rhs) const;
   bool operator<(const Position& rhs) const;
 
-  bool IsValid() const;
-  std::string ToString() const;
+  [[nodiscard]] bool IsValid() const;
+  [[nodiscard]] std::string ToString() const;
 
   static Position FromString(std::string_view str);
 
   static const int kMaxRows = 16384;
   static const int kMaxCols = 16384;
+};
+
+struct PositionHasher {
+    size_t operator()(const Position& p) const {
+        return std::hash<int>()(p.row * Position::kMaxRows + p.col);
+    }
 };
 
 struct Size {
@@ -93,16 +100,16 @@ public:
   // Возвращает видимое значение ячейки.
   // В случае текстовой ячейки это её текст (без экранирующих символов). В
   // случае формулы - числовое значение формулы или сообщение об ошибке.
-  virtual Value GetValue() const = 0;
+  [[nodiscard]] virtual Value GetValue() const = 0;
   // Возвращает внутренний текст ячейки, как если бы мы начали её
   // редактирование. В случае текстовой ячейки это её текст (возможно,
   // содержащий экранирующие символы). В случае формулы - её выражение.
-  virtual std::string GetText() const = 0;
+  [[nodiscard]] virtual std::string GetText() const = 0;
 
   // Возвращает список ячеек, которые непосредственно задействованы в данной
   // формуле. Список отсортирован по возрастанию и не содержит повторяющихся
   // ячеек. В случае текстовой ячейки список пуст.
-  virtual std::vector<Position> GetReferencedCells() const = 0;
+  [[nodiscard]] virtual std::vector<Position> GetReferencedCells() const = 0;
 };
 
 inline constexpr char kFormulaSign = '=';
@@ -130,7 +137,7 @@ public:
 
   // Возвращает значение ячейки.
   // Если ячейка пуста, может вернуть nullptr.
-  virtual const ICell* GetCell(Position pos) const = 0;
+  [[nodiscard]] virtual const ICell* GetCell(Position pos) const = 0;
   virtual ICell* GetCell(Position pos) = 0;
 
   // Очищает ячейку.
@@ -157,7 +164,7 @@ public:
   // Вычисляет размер области, которая участвует в печати.
   // Определяется как ограничивающий прямоугольник всех ячеек с непустым
   // текстом.
-  virtual Size GetPrintableSize() const = 0;
+  [[nodiscard]] virtual Size GetPrintableSize() const = 0;
 
   // Выводит всю таблицу в переданный поток. Столбцы разделяются знаком
   // табуляции. После каждой строки выводится символ перевода строки. Для
@@ -184,21 +191,20 @@ private:
 
 class Sheet : public ISheet {
 public:
-    using TableCell = std::unique_ptr<ICell>;
-    using TableRow = std::vector<TableCell>;
-    using SheetTable = std::vector<TableRow>;
+    Sheet();
     ~Sheet() override;
     void ClearCell(Position pos) override;
     void SetCell(Position pos, std::string text) override;
-    const ICell* GetCell(Position pos) const override ;
-    ICell* GetCell(Position pos) override ;
+    [[nodiscard]] const ICell* GetCell(Position pos) const override;
+    ICell* GetCell(Position pos) override;
     void InsertRows(int before, int count = 1) override;
-    void InsertCols(int before, int count = 1) override ;
+    void InsertCols(int before, int count = 1) override;
     void DeleteRows(int first, int count = 1)override;
-    void DeleteCols(int first, int count = 1) override ;
-    Size GetPrintableSize() const override;
-    void PrintValues(std::ostream& output) const override ;
+    void DeleteCols(int first, int count = 1) override;
+    [[nodiscard]] Size GetPrintableSize() const override;
+    void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 private:
-    SheetTable sheets_;
+    std::unordered_map<Position, std::unique_ptr<ICell>, PositionHasher> sheets_;
+    int row_min_, row_max_, col_min_, col_max_;
 };
